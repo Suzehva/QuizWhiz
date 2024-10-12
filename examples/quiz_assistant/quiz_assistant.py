@@ -1,11 +1,9 @@
 import logging
 import os
-
 from pydantic import BaseModel
-
 import outspeed as sp
-
 import aiohttp
+
 
 
 def check_outspeed_version():
@@ -35,28 +33,22 @@ This tells the outspeed server which functions to run.
 """
 
 
-class Query(BaseModel):
-    chat_history_of_user_and_assistant: list[dict[str, str]]
+class UserResponse(BaseModel):
+    user_response: str
 
 
 class SearchResult(BaseModel):
-    result: str # question + context
+    result: str
 
 
-chat_history = []
-
-# CHANGED: removed async 
-def process(response) -> str:
-    # INPUT: chat history from last response
-    # FUNCTION: this function processes the chat history and returns a new question to ask (including explanation to LLM)
-    # OUTPUT: new question to ask 
-    global chat_history
-    chat_history.append()
+class SearchTool(sp.Tool):
+    chat_history = []
 
 
-    logging.info(f"CALLED PROCESS FUNCTION, this is input: {response}")
-    return ""
-
+    async def run(self, user_response: UserResponse) -> SearchResult:
+        SearchTool.chat_history.append(user_response)
+        logging.info(f"search_tool: {user_response}")
+        return SearchResult(result = "Ask the user about dinosaurs right now")
 
 @sp.App()
 class VoiceBot:
@@ -64,23 +56,31 @@ class VoiceBot:
         # Initialize the AI services
         self.deepgram_node = sp.DeepgramSTT(sample_rate=8000)
         self.llm_node = sp.OpenAIRealtime(
-            system_prompt="",
+            system_prompt="You are an assistant that asks a user questions.",
+            tools=[SearchTool(name="answer_tool", description="this tool is called whenenver the user says something to provide context for the response.", parameters_type=UserResponse, response_type=SearchResult)],
+            #tool_choice="required" # TODO: figure out why turning this on causes everything to break
         )
+        self.chat_history = [] # from the user's side only
+        # TODO: add logic to upload file, do embeddings, etc.
+    
+    # def test(self, response: str) -> str:
+    #     logging.info(f"CALLED TEST FUNCTION, this is input: {response}")
+    #     return ""
 
     @sp.streaming_endpoint()
     async def run(self, audio_input_queue: sp.AudioStream, text_input_queue: sp.TextStream) -> sp.AudioStream:
-        # vad_stream = self.vad_node.run(audio_input_queue.clone())
         # Set up the AI service pipeline
-        audio_output_stream: sp.AudioStream
-        logging.info("INSIDE RUN")
+        # audio_output_stream: sp.AudioStream
+        # transcript_queue = self.deepgram_node.run(audio_input_queue)
+        # question_instruction_queue = sp.map(transcript_queue, self.process)
 
-        transcript_queue = self.deepgram_node.run(audio_input_queue)
+        # # testing purposes
+        # text_queue = self.deepgram_node.run(text_input_queue)
+        # question_instruction_queue = sp.map(text_queue, self.test)
 
-        question_instruction_queue = sp.map(transcript_queue, process)
+        audio_output_stream, text_output_queue = self.llm_node.run(text_input_queue, audio_input_queue)
 
-        audio_output_stream = self.llm_node.run(question_instruction_queue, audio_input_queue)
-
-        return audio_output_stream
+        return audio_output_stream, text_output_queue
 
     async def teardown(self) -> None:
         """
@@ -94,4 +94,7 @@ class VoiceBot:
 
 if __name__ == "__main__":
     # Start the VoiceBot when the script is run directly
+
+
+
     VoiceBot().start()
