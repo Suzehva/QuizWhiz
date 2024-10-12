@@ -43,24 +43,19 @@ class SearchResult(BaseModel):
     result: str # question + context
 
 
-class QuestionTool(sp.Tool):
-
-    async def run(self, query: Query) -> SearchResult:
-        # note: query doesn't mean anything in this context
-        print(query.chat_history_of_user_and_assistant)
-
-
 chat_history = []
 
-async def process(response) -> str:
+# CHANGED: removed async 
+def process(response) -> str:
     # INPUT: chat history from last response
     # FUNCTION: this function processes the chat history and returns a new question to ask (including explanation to LLM)
     # OUTPUT: new question to ask 
-
     global chat_history
+    chat_history.append()
 
 
-    print(response)
+    logging.info(f"CALLED PROCESS FUNCTION, this is input: {response}")
+    return ""
 
 
 @sp.App()
@@ -69,7 +64,7 @@ class VoiceBot:
         # Initialize the AI services
         self.deepgram_node = sp.DeepgramSTT(sample_rate=8000)
         self.llm_node = sp.OpenAIRealtime(
-            system_prompt=""
+            system_prompt="",
         )
 
     @sp.streaming_endpoint()
@@ -77,8 +72,9 @@ class VoiceBot:
         # vad_stream = self.vad_node.run(audio_input_queue.clone())
         # Set up the AI service pipeline
         audio_output_stream: sp.AudioStream
+        logging.info("INSIDE RUN")
 
-        transcript_queue = self.deepgram_node(audio_input_queue)
+        transcript_queue = self.deepgram_node.run(audio_input_queue)
 
         question_instruction_queue = sp.map(transcript_queue, process)
 
