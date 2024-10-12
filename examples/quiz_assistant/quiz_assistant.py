@@ -43,6 +43,9 @@ class SearchResult(BaseModel):
 
 class SearchTool(sp.Tool):
     chat_history = []
+    questions_to_ask = []
+    logging.info("INITIALIZING SEARCHTOOL")
+    # EMBEDDING STUFF here
 
 
     async def run(self, user_response: UserResponse) -> SearchResult:
@@ -60,12 +63,7 @@ class VoiceBot:
             tools=[SearchTool(name="answer_tool", description="this tool is called whenenver the user says something to provide context for the response.", parameters_type=UserResponse, response_type=SearchResult)],
             #tool_choice="required" # TODO: figure out why turning this on causes everything to break
         )
-        self.chat_history = [] # from the user's side only
-        # TODO: add logic to upload file, do embeddings, etc.
-    
-    # def test(self, response: str) -> str:
-    #     logging.info(f"CALLED TEST FUNCTION, this is input: {response}")
-    #     return ""
+         
 
     @sp.streaming_endpoint()
     async def run(self, audio_input_queue: sp.AudioStream, text_input_queue: sp.TextStream) -> sp.AudioStream:
