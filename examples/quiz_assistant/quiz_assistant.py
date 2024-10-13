@@ -3,8 +3,14 @@ import os
 from pydantic import BaseModel
 import outspeed as sp
 import aiohttp
+import voyageai
+import numpy as np
+#import fitz
+import time
+import pickle
+import re
 
-
+from embedding_helper import extract_text, chunk_text, embed_texts, extract_text_from_pdf, generate_questions
 
 def check_outspeed_version():
     import importlib.metadata
@@ -41,17 +47,64 @@ class SearchResult(BaseModel):
     result: str
 
 
+
 class SearchTool(sp.Tool):
     chat_history = []
-    questions_to_ask = []
-    logging.info("INITIALIZING SEARCHTOOL")
-    # EMBEDDING STUFF here
+    questions_and_context = []
+    
+    
+    def __init__(self, name, description, parameters_type, response_type):
+        super().__init__(name=name, description=description, parameters_type=parameters_type, response_type=response_type)
+        logging.info("INITIALIZING SEARCHTOOL")
+    
+        # EMBEDDING STUFF here
+        text_path = input("Please upload your PDF file (enter the path): ")
+        # /Users/suze/Documents/Storing_code/outspeed/examples/quiz_assistant/basic-plant-care-understanding-your-plants-needs-hla-6461.pdf
+        while not os.path.isfile(text_path) or not text_path.endswith('.pdf'):
+            print("Invalid file. Please ensure the path points to a PDF file.")
+            text_path = input("Please upload your PDF file (enter the path): ")
+        text = extract_text_from_pdf(text_path)
+        #questions_to_ask = generate_questions(text)
+        #logging.info(f"QUESTIONS_TO_ASK: {questions_to_ask}")
+        documents = chunk_text(extract_text(text_path))
+        embeddings = embed_texts(documents)
+
+        with open("embeddings.pkl", "wb") as f:
+            pickle.dump(embeddings, f) # maybe unnecessary
+        vo = voyageai.Client(api_key="pa-gA94dVkc9_oN6GXJaheWdjCdrzwY06JoNOCDbqyBkqg")
+        questions_to_ask = ['1. Who is the Assistant Extension Specialist in Horticulture at Oklahoma State University?', '2. What is the importance of understanding basic plant terminology and requirements?', '3. Describe the binomial naming system created by Carl Linnaeus.', '4. Differentiate between variety and cultivar in terms of plants.', '5. What are the differences between annual, perennial, and biennial plants?', '6. How many hardiness zones are present in the USDA Hardiness Zone Map?', '7. Explain the terms full sun, part sun, part shade, and full shade in relation to plant light requirements.', '8. How can you test soil drainage in your garden?', '9. Why is soil testing important before planning and planting a garden?', '10. How can mulch be beneficial for a garden?']
+        #["What is biennial?", "What do plants need to survive?"]
+        query_embeddings = vo.embed(questions_to_ask, model="voyage-3", input_type="query").embeddings
+
+        
+        for i, query_embedding in enumerate(query_embeddings):
+            similarity = np.dot(embeddings, query_embedding)
+            retrieved_id = np.argmax(similarity)
+            info_dict = {
+                'question': questions_to_ask[i],
+                'score':0,
+                'context':documents[retrieved_id],
+            }
+            SearchTool.questions_and_context.append(info_dict)
+            time.sleep(5)
 
 
     async def run(self, user_response: UserResponse) -> SearchResult:
         SearchTool.chat_history.append(user_response)
         logging.info(f"search_tool: {user_response}")
-        return SearchResult(result = "Ask the user about dinosaurs right now")
+        
+
+        # TODO: generate new questions based on chat history
+
+        # take a question from question bank
+        if len(SearchTool.questions_and_context) > 0:
+            info_dict = SearchTool.questions_and_context.pop()
+            output = f"Ask the user the following question: {info_dict['question']}. Provide the user feedback on their context: {info_dict['context']} DO NOT GIVE THE USER THIS CONTEXT. ONLY USE IT TO PROVIDE FEEDBACK AFTER THEY RESPOND!"
+        else:
+            output = 'Tell the user you ran out of questions to ask'
+            
+
+        return SearchResult(result = output)
 
 @sp.App()
 class VoiceBot:
@@ -60,8 +113,13 @@ class VoiceBot:
         self.deepgram_node = sp.DeepgramSTT(sample_rate=8000)
         self.llm_node = sp.OpenAIRealtime(
             system_prompt="You are an assistant that asks a user questions.",
-            tools=[SearchTool(name="answer_tool", description="this tool is called whenenver the user says something to provide context for the response.", parameters_type=UserResponse, response_type=SearchResult)],
-            #tool_choice="required" # TODO: figure out why turning this on causes everything to break
+            tools=[SearchTool(
+                name="answer_tool", 
+                description="call this tool every time you want to answer a user or you start a chat", 
+                parameters_type=UserResponse, 
+                response_type=SearchResult, 
+            )],
+            tool_choice="required"
         )
          
 
@@ -92,7 +150,4 @@ class VoiceBot:
 
 if __name__ == "__main__":
     # Start the VoiceBot when the script is run directly
-
-
-
     VoiceBot().start()
