@@ -2,7 +2,7 @@
 
 </div>
 
-# Outspeed
+## QuizWiz
 
 Outspeed is a PyTorch-inspired SDK for building real-time AI applications on voice and video input. It offers:
 
