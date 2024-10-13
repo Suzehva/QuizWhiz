@@ -8,12 +8,6 @@
   </picture>
 </p>
 
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/outspeed.svg?style=social&label=Follow%20%40outspeedAI)](https://twitter.com/outspeedAI) [![GitHub Repo stars](https://img.shields.io/github/stars/outspeed-ai/outspeed?style=social)](https://github.com/outspeed-ai/outspeed)
-[![pypi](https://img.shields.io/pypi/v/outspeed.svg)](https://pypi.python.org/pypi/outspeed)
-[![Downloads](https://static.pepy.tech/badge/outspeed/month)](https://pepy.tech/project/outspeed)
-
-[Community](https://discord.gg/cmffw6syvp) | [Docs](https://docs.outspeed.com) | [Dashboard](https://app.outspeed.com)
-
 </div>
 
 # Outspeed
