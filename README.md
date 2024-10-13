@@ -2,4 +2,4 @@
 
 </div>
 
-## QuizWiz: An Interactive Voice-Based Study Tool 🚀
+## QuizWiz: Interactive Voice-Based Quizzing Made Fun with an LLM! 🎓
