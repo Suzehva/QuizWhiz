@@ -1,13 +1,5 @@
 <div align="center">
 
-<p align="center">
-  <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="/.github/outspeed_dark.jpg">
-  <source media="(prefers-color-scheme: light)" srcset="/.github/outspeed_light.jpg">
-  <img style="width:50%;" alt="The Outspeed Logo and SDK repository." src="https://raw.githubusercontent.com/outspeed/outspeed/main/.github/banner_light.png" width="50%">
-  </picture>
-</p>
-
 </div>
 
 # Outspeed
