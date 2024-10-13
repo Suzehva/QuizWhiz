@@ -2,4 +2,4 @@
 
 </div>
 
-## QuizWiz: Interactive Voice-Based Quizzing Made Fun with an LLM! 🎓
+## QuizWiz: Interactive Quizzing Made Fun with an LLM! 🎓
