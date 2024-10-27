@@ -72,8 +72,7 @@ class SearchTool(sp.Tool):
         with open("embeddings.pkl", "wb") as f:
             pickle.dump(embeddings, f) # maybe unnecessary
         vo = voyageai.Client(api_key="pa-gA94dVkc9_oN6GXJaheWdjCdrzwY06JoNOCDbqyBkqg")
-        questions_to_ask = ['1. Who is the Assistant Extension Specialist in Horticulture at Oklahoma State University?', '2. What is the importance of understanding basic plant terminology and requirements?', '3. Describe the binomial naming system created by Carl Linnaeus.', '4. Differentiate between variety and cultivar in terms of plants.', '5. What are the differences between annual, perennial, and biennial plants?', '6. How many hardiness zones are present in the USDA Hardiness Zone Map?', '7. Explain the terms full sun, part sun, part shade, and full shade in relation to plant light requirements.', '8. How can you test soil drainage in your garden?', '9. Why is soil testing important before planning and planting a garden?', '10. How can mulch be beneficial for a garden?']
-        #["What is biennial?", "What do plants need to survive?"]
+        questions_to_ask = ['1. What do plants need to survive?',  'How can mulch be beneficial for a garden?', "What is biennial?"]
         query_embeddings = vo.embed(questions_to_ask, model="voyage-3", input_type="query").embeddings
 
         
